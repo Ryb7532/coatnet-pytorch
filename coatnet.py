@@ -196,7 +196,9 @@ class ConvTransformer(nn.Module):
         attn = nn.ModuleList([])
         ffn = nn.ModuleList([])
 
-        attn.append(norm((in_channels,)+image_size))  # pre-norm
+        attn.append(Rearrange('b c h w -> b h w c'))
+        attn.append(norm(in_channels))  # pre-norm
+        attn.append(Rearrange('b h w c -> b c h w'))
 
         if downsampling or in_channels != out_channels:
             if downsampling:
@@ -214,8 +216,8 @@ class ConvTransformer(nn.Module):
         attn.append(RelativeMultiHeadSelfAttention(in_channels, out_channels, image_size, head_dim, n_heads, dropout))
         attn.append(Rearrange('b (h w) c -> b c h w', h=h, w=w))
 
-        ffn.append(norm((out_channels,)+image_size))  # pre-norm
         ffn.append(Rearrange('b c h w -> b (h w) c'))
+        ffn.append(norm(out_channels))  # pre-norm
         ffn.append(FFN(out_channels, hidden_dim, activation, dropout))
         ffn.append(Rearrange('b (h w) c -> b c h w', h=h, w=w))
 
@@ -289,7 +291,7 @@ def coatnet_0():
         ('T', 5, 384, True),
         ('T', 2, 768, True),
     ]
-    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, n_heads=12)
+    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000)
 
 def coatnet_1():
     stage_configs = [
@@ -299,7 +301,7 @@ def coatnet_1():
         ('T', 14, 384, True),
         ('T', 2,  768, True),
     ]
-    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, n_heads=12)
+    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000)
 
 
 def coatnet_2():
@@ -310,7 +312,7 @@ def coatnet_2():
         ('T', 14, 512,  True),
         ('T', 2,  1024, True),
     ]
-    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, n_heads=12)
+    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000)
 
 
 def coatnet_3():
@@ -321,7 +323,7 @@ def coatnet_3():
         ('T', 14, 768,  True),
         ('T', 2,  1536, True),
     ]
-    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, n_heads=20)
+    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000)
 
 
 def coatnet_4():
@@ -332,7 +334,7 @@ def coatnet_4():
         ('T', 28, 768,  True),
         ('T', 2,  1536, True),
     ]
-    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, n_heads=20)
+    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000)
 
 
 def coatnet_5():
@@ -343,7 +345,7 @@ def coatnet_5():
         ('T', 28, 1280, True),
         ('T', 2,  2048, True),
     ]
-    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, head_dim=64, n_heads=16)
+    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, head_dim=64)
 
 
 def coatnet_6():
@@ -355,7 +357,7 @@ def coatnet_6():
         ('T', 42, 1536, False),
         ('T', 2,  2048, True),
     ]
-    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, head_dim=128, n_heads=16)
+    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, head_dim=128)
 
 
 def coatnet_7():
@@ -367,11 +369,11 @@ def coatnet_7():
         ('T', 42, 2048, False),
         ('T', 2,  3072, True),
     ]
-    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, head_dim=128, n_heads=16)
+    return CoAtNet((224, 224), 3, stage_configs, num_classes=1000, head_dim=128)
 
 
 def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return sum(p.numel() for p in model.parameters())
 
 
 if __name__ == '__main__':
